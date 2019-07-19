@@ -3,6 +3,8 @@ import { connect } from 'react-redux';
 import { MdAddShoppingCart } from 'react-icons/md';
 import api from '../../services/api';
 import { formatPrice } from '../../util/format';
+import * as CarrinhoActions from '../../store/modules/carrinho/actions';
+import { bindActionCreators } from 'redux';
 
 import { ProdutoList } from './styles';
 
@@ -20,17 +22,15 @@ class Home extends Component {
     }));
     this.setState({ produtos: data });
   }
-  handleAddProduto = produto => {
-    const { dispatch } = this.props;
 
-    dispatch({
-      type: 'ADD_TO_CARRINHO',
-      produto,
-    });
+  handleAddProduto = id => {
+    const { adicionarCarrinhoRequest } = this.props;
+    adicionarCarrinhoRequest(id);
   };
 
   render() {
     const { produtos } = this.state;
+    const { quantidade } = this.props;
 
     return (
       <ProdutoList>
@@ -42,10 +42,11 @@ class Home extends Component {
 
             <button
               type="button"
-              onClick={() => this.handleAddProduto(produto)}
+              onClick={() => this.handleAddProduto(produto.id)}
             >
               <div>
-                <MdAddShoppingCart size={16} color="#FFF" /> 3
+                <MdAddShoppingCart size={16} color="#FFF" />{' '}
+                {quantidade[produto.id] || 0}
               </div>
               <span>ADICIONAR AO CARRINHO</span>
             </button>
@@ -55,4 +56,16 @@ class Home extends Component {
     );
   }
 }
-export default connect()(Home);
+const mapStateToProps = state => ({
+  quantidade: state.carrinho.reduce((quantidade, produto) => {
+    quantidade[produto.id] = produto.quantidade;
+    return quantidade;
+  }, {}),
+});
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(CarrinhoActions, dispatch);
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Home);
