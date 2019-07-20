@@ -4,19 +4,40 @@ import {
   MdAddCircleOutline,
   MdDelete,
 } from 'react-icons/md';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import * as CarrinhoActions from '../../store/modules/carrinho/actions';
-import { bindActionCreators } from 'redux';
+
 import { formatPrice } from '../../util/format';
 
 import { Container, ProdutoTabela, Total } from './styles';
 
-function Carrinho({ carrinho, total, removerCarrinho, updateCarrinhoRequest }) {
+export default function Carrinho() {
+  const total = useSelector(state =>
+    formatPrice(
+      state.carrinho.reduce((total, produto) => {
+        return total + produto.price * produto.quantidade;
+      }, 0)
+    )
+  );
+
+  const carrinho = useSelector(state =>
+    state.carrinho.map(produto => ({
+      ...produto,
+      subTotal: formatPrice(produto.price * produto.quantidade),
+    }))
+  );
+
+  const dispatch = useDispatch();
+
   function adicionarQuantidade(produto) {
-    updateCarrinhoRequest(produto.id, produto.quantidade + 1);
+    dispatch(
+      CarrinhoActions.updateCarrinhoRequest(produto.id, produto.quantidade + 1)
+    );
   }
   function removerQuantidade(produto) {
-    updateCarrinhoRequest(produto.id, produto.quantidade - 1);
+    dispatch(
+      CarrinhoActions.updateCarrinhoRequest(produto.id, produto.quantidade - 1)
+    );
   }
   return (
     <Container>
@@ -68,7 +89,9 @@ function Carrinho({ carrinho, total, removerCarrinho, updateCarrinhoRequest }) {
               <td>
                 <button
                   type="button"
-                  onClick={() => removerCarrinho(produto.id)}
+                  onClick={() =>
+                    dispatch(CarrinhoActions.removerCarrinho(produto.id))
+                  }
                 >
                   <MdDelete size={20} color="#7159c1" />
                 </button>
@@ -87,23 +110,3 @@ function Carrinho({ carrinho, total, removerCarrinho, updateCarrinhoRequest }) {
     </Container>
   );
 }
-const mapDispatchToProps = dispatch =>
-  bindActionCreators(CarrinhoActions, dispatch);
-
-const mapStateToProps = state => ({
-  carrinho: state.carrinho.map(produto => ({
-    ...produto,
-    subTotal: formatPrice(produto.price * produto.quantidade),
-  })),
-
-  total: formatPrice(
-    state.carrinho.reduce((total, produto) => {
-      return total + produto.price * produto.quantidade;
-    }, 0)
-  ),
-});
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Carrinho);
